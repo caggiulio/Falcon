@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'Falcon_Example' do
+  pod 'Falcon', :path => '../'
+
+  target 'Falcon_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
