@@ -6,38 +6,32 @@
 //
 
 import Foundation
-import PromiseKit
-import SwiftyJSON
-import Alamofire
 
-public enum APIResult {
-    case success(FalconResponse)
-    case error(FalconResponse?, Error?)
+public struct FalconResponse {
+    public var success: Bool
+    public var response: HTTPURLResponse?
+    public var error: APIError?
+    public var data: Data?
+    public var json: [String : Any]
 }
+
+
 
 public class Falcon: NSObject {
     
-    internal static var requestManager: RestClient?
+    internal static var requestManager: NetworkManager?
     
-    public static func setup(baseUrl: String) {
-        self.requestManager = RestClient()
+    public static func setup(baseUrl: URL) {
+        self.requestManager = NetworkManager()
         requestManager?.setupBaseUrl(baseUrl: baseUrl)
     }
     
-    public static func request(url: String?, method: HTTPMethod, parameters: [String:AnyObject]? = nil, withQuery: Bool = false, completion: @escaping (APIResult) -> ()) {
+    public static func request(url: String?, method: HTTPMethod, parameters: [String:AnyObject]? = nil, withQuery: Bool = false, completion: @escaping (FalconResponse) -> ()) {
+        
         if let _url = url {
-            self.requestManager?.request(method, URIString: _url, parameters: parameters, withQuery: withQuery).done({ (response) in
-                if let statCode = response.statusCode {
-                    if statCode >= 200, statCode < 300 {
-                        completion(.success(response))
-                    } else {
-                        completion(.error(response, response.error))
-                    }
-                } else {
-                    completion(APIResult.error(nil, response.error))
-                }
-            }).catch({ (error) in
-                completion(APIResult.error(nil, error))
+            requestManager?.request(method: method, path: _url, { (success, response, error, data, json) in
+                let falconResponse = FalconResponse(success: success, response: response, error: error, data: data, json: json)
+                completion(falconResponse)
             })
         }        
     }
